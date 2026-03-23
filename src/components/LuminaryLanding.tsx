@@ -191,7 +191,8 @@ const LuminaryLanding = () => {
     loadVanta();
     return () => {
       mounted = false;
-      if (vantaEffect.current) vantaEffect.current.destroy();
+      try { vantaEffect.current?.destroy(); } catch (_) {}
+      vantaEffect.current = null;
     };
   }, []);
 
