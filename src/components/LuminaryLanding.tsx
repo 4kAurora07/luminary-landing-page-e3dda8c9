@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState, useCallback } from "react";
-import { motion, useInView } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
+import { motion, useInView, AnimatePresence } from "framer-motion";
+import { Home, Sparkles, Layers, Download } from "lucide-react";
 import logoFull from "@/assets/logo-full.png";
 
-const AUTH_URL = "https://luminary-diary.netlify.app/auth";
+const APK_URL = "/assets/luminary.apk";
 
 // ─── Animated Section Wrapper ───
 const AnimatedSection = ({ children, className = "", id = "" }: { children: React.ReactNode; className?: string; id?: string }) => {
@@ -25,26 +26,71 @@ const AnimatedSection = ({ children, className = "", id = "" }: { children: Reac
 // ─── Glass Card ───
 const GlassCard = ({ emoji, title, description, className = "" }: { emoji: string; title: string; description: string; className?: string }) => (
   <motion.div
-    className={`glass-card rounded-xl p-6 md:p-8 group transition-all duration-300 hover:border-primary/30 ${className}`}
+    className={`glass-card rounded-xl p-6 md:p-8 group transition-all duration-300 hover:border-primary/30 h-full flex flex-col ${className}`}
     whileHover={{ y: -6, boxShadow: "0 0 30px rgba(124, 58, 237, 0.2)" }}
   >
     <span className="text-3xl md:text-4xl block mb-4">{emoji}</span>
     <h3 className="text-lg md:text-xl font-semibold text-foreground mb-2">{title}</h3>
-    <p className="text-muted-foreground text-sm md:text-base leading-relaxed">{description}</p>
+    <p className="text-muted-foreground text-sm md:text-base leading-relaxed flex-1">{description}</p>
   </motion.div>
 );
 
 // ─── Step Card ───
 const StepCard = ({ emoji, step, title, description }: { emoji: string; step: string; title: string; description: string }) => (
   <motion.div
-    className="glass-card rounded-xl p-6 text-center flex-1 min-w-[240px]"
+    className="glass-card rounded-xl p-6 text-center flex-1 min-w-[240px] h-full flex flex-col"
     whileHover={{ y: -4, boxShadow: "0 0 25px rgba(124, 58, 237, 0.15)" }}
   >
     <span className="text-3xl block mb-3">{emoji}</span>
     <p className="text-xs font-medium text-primary uppercase tracking-widest mb-1">{step}</p>
     <h3 className="text-lg font-semibold text-foreground mb-2">{title}</h3>
-    <p className="text-muted-foreground text-sm leading-relaxed">{description}</p>
+    <p className="text-muted-foreground text-sm leading-relaxed flex-1">{description}</p>
   </motion.div>
+);
+
+// ─── Bottom Nav ───
+const navItems = [
+  { id: "hero", label: "Home", icon: Home },
+  { id: "features", label: "Features", icon: Sparkles },
+  { id: "howit", label: "How it Works", icon: Layers },
+  { id: "download", label: "Download", icon: Download, isDownload: true },
+];
+
+const FloatingBottomNav = ({ activeSection }: { activeSection: string }) => (
+  <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 max-w-md w-[90%] h-14 glass-card rounded-2xl border border-white/10 flex items-center justify-around px-2"
+    style={{ boxShadow: "0 0 30px rgba(124, 58, 237, 0.25)" }}
+  >
+    {navItems.map((item) => {
+      const isActive = activeSection === item.id;
+      const Icon = item.icon;
+      const content = (
+        <div className="relative flex flex-col items-center gap-0.5 px-3 py-1.5">
+          {isActive && (
+            <motion.div
+              layoutId="bottomNavActive"
+              className="absolute inset-0 rounded-xl bg-primary/15"
+              transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            />
+          )}
+          <Icon size={18} className={isActive ? "text-primary" : "text-muted-foreground"} />
+          <span className={`text-[10px] font-medium ${isActive ? "text-primary" : "text-muted-foreground"}`}>{item.label}</span>
+        </div>
+      );
+
+      if (item.isDownload) {
+        return (
+          <a key={item.id} href={APK_URL} download className="cursor-pointer">
+            {content}
+          </a>
+        );
+      }
+      return (
+        <button key={item.id} onClick={() => document.getElementById(item.id)?.scrollIntoView({ behavior: "smooth" })} className="cursor-pointer">
+          {content}
+        </button>
+      );
+    })}
+  </nav>
 );
 
 // ─── FEATURES DATA ───
@@ -74,17 +120,16 @@ const whyCards = [
 const LuminaryLanding = () => {
   const [scrolled, setScrolled] = useState(false);
   const [bgColor, setBgColor] = useState("#0a0a0f");
+  const [activeSection, setActiveSection] = useState("hero");
   const vantaRef = useRef<HTMLDivElement>(null);
   const vantaEffect = useRef<any>(null);
 
-  // Scroll listener for navbar
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 40);
     window.addEventListener("scroll", handler, { passive: true });
     return () => window.removeEventListener("scroll", handler);
   }, []);
 
-  // Intersection Observer for background transitions
   useEffect(() => {
     const sections = [
       { id: "hero", color: "#0a0a0f" },
@@ -99,7 +144,10 @@ const LuminaryLanding = () => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             const section = sections.find((s) => s.id === entry.target.id);
-            if (section) setBgColor(section.color);
+            if (section) {
+              setBgColor(section.color);
+              setActiveSection(section.id);
+            }
           }
         });
       },
@@ -114,7 +162,6 @@ const LuminaryLanding = () => {
     return () => observer.disconnect();
   }, []);
 
-  // Vanta.js stars
   useEffect(() => {
     let mounted = true;
     const loadVanta = async () => {
@@ -150,7 +197,7 @@ const LuminaryLanding = () => {
 
   return (
     <div
-      className="min-h-screen relative"
+      className="min-h-screen relative pb-24"
       style={{ backgroundColor: bgColor, transition: "background-color 1.2s ease" }}
     >
       {/* ── NAVBAR ── */}
@@ -160,21 +207,19 @@ const LuminaryLanding = () => {
         }`}
       >
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <img src={logoFull} alt="Luminary" className="h-8" />
-          <div className="flex items-center gap-3">
-            <a
-              href={AUTH_URL}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors px-4 py-2 rounded-lg border border-transparent hover:border-border"
-            >
-              Sign In
-            </a>
-            <a
-              href={AUTH_URL}
-              className="text-sm font-medium bg-primary text-primary-foreground px-5 py-2 rounded-lg glow-button"
-            >
-              Get Started
-            </a>
-          </div>
+          <img
+            src={logoFull}
+            alt="Luminary"
+            className="h-6 w-auto object-contain"
+            style={{ filter: "drop-shadow(0 0 8px rgba(124, 58, 237, 0.4))" }}
+          />
+          <a
+            href={APK_URL}
+            download
+            className="text-sm font-medium bg-primary text-primary-foreground px-5 py-2 rounded-lg glow-button"
+          >
+            Get Started
+          </a>
         </div>
       </nav>
 
@@ -193,14 +238,13 @@ const LuminaryLanding = () => {
           </motion.div>
 
           <motion.h1
-            className="text-5xl md:text-7xl font-bold leading-tight mb-6"
+            className="text-6xl md:text-8xl font-bold leading-tight mb-6"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4, duration: 0.7 }}
           >
-            The diary that
-            <br />
-            <span className="gradient-text">grows with you.</span>
+            <span className="text-foreground">Lumin</span>
+            <span className="gradient-text">ary</span>
           </motion.h1>
 
           <motion.p
@@ -219,17 +263,18 @@ const LuminaryLanding = () => {
             transition={{ delay: 0.8, duration: 0.6 }}
           >
             <a
-              href={AUTH_URL}
+              href={APK_URL}
+              download
               className="text-base font-semibold bg-primary text-primary-foreground px-8 py-3.5 rounded-xl glow-button"
             >
-              Begin Your Journey →
+              Download for Android →
             </a>
-            <a
-              href="#features"
+            <button
+              onClick={() => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })}
               className="text-base font-medium text-muted-foreground border border-border px-8 py-3.5 rounded-xl hover:text-foreground hover:border-primary/40 transition-all"
             >
               See What's Inside ↓
-            </a>
+            </button>
           </motion.div>
 
           <motion.p
@@ -254,10 +299,11 @@ const LuminaryLanding = () => {
               Everything you need to journal consistently and understand yourself better.
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
             {features.map((f, i) => (
               <motion.div
                 key={f.title}
+                className="h-full"
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-40px" }}
@@ -285,7 +331,7 @@ const LuminaryLanding = () => {
             {steps.map((s, i) => (
               <div key={s.step} className="flex flex-col md:flex-row items-center flex-1">
                 <motion.div
-                  className="flex-1 w-full"
+                  className="flex-1 w-full h-full"
                   initial={{ opacity: 0, y: 30 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
@@ -311,10 +357,11 @@ const LuminaryLanding = () => {
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-4">Why Luminary?</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-stretch">
             {whyCards.map((c, i) => (
               <motion.div
                 key={c.title}
+                className="h-full"
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -329,7 +376,6 @@ const LuminaryLanding = () => {
 
       {/* ── FINAL CTA ── */}
       <AnimatedSection id="cta" className="py-24 md:py-36 px-4 relative overflow-hidden">
-        {/* Radial glow */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div
             className="w-[600px] h-[600px] rounded-full animate-breathe"
@@ -346,10 +392,11 @@ const LuminaryLanding = () => {
             Start for free. Write your first entry today. No credit card, no pressure — just you and your thoughts.
           </p>
           <a
-            href={AUTH_URL}
+            href={APK_URL}
+            download
             className="inline-block text-lg font-semibold bg-primary text-primary-foreground px-10 py-4 rounded-xl glow-button"
           >
-            Start Writing for Free →
+            Download for Android →
           </a>
           <p className="text-sm text-muted-foreground mt-6">Free forever · Available on Android</p>
         </div>
@@ -359,7 +406,7 @@ const LuminaryLanding = () => {
       <footer className="border-t border-border py-12 px-4">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex flex-col items-center md:items-start gap-2">
-            <img src={logoFull} alt="Luminary" className="h-8" />
+            <img src={logoFull} alt="Luminary" className="h-6 w-auto object-contain" style={{ filter: "drop-shadow(0 0 8px rgba(124, 58, 237, 0.4))" }} />
             <p className="text-sm text-muted-foreground">Your life, beautifully remembered.</p>
           </div>
           <div className="flex items-center gap-6 text-sm text-muted-foreground">
@@ -370,6 +417,9 @@ const LuminaryLanding = () => {
           <p className="text-xs text-muted-foreground">© 2026 Luminary. All rights reserved.</p>
         </div>
       </footer>
+
+      {/* ── FLOATING BOTTOM NAV ── */}
+      <FloatingBottomNav activeSection={activeSection} />
     </div>
   );
 };
