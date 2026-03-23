@@ -3,7 +3,7 @@ import { motion, useInView, AnimatePresence } from "framer-motion";
 import { Home, Sparkles, Layers, Download } from "lucide-react";
 import logoFull from "@/assets/logo-full.png";
 
-const APK_URL = "/assets/luminary.apk";
+const APK_URL = "https://github.com/4kAurora07/Luminary-APP/releases/download/v1.0.0/Luminary.apk";
 
 // ─── Animated Section Wrapper ───
 const AnimatedSection = ({ children, className = "", id = "" }: { children: React.ReactNode; className?: string; id?: string }) => {
