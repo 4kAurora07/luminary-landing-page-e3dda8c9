@@ -119,21 +119,22 @@ const LuminaryLanding = () => {
     let mounted = true;
     const loadVanta = async () => {
       try {
-        const STARS = (await import("vanta/dist/vanta.stars.min")).default;
+        const DOTS = (await import("vanta/dist/vanta.dots.min")).default;
         if (mounted && vantaRef.current && !vantaEffect.current) {
           const THREE = await import("three");
-          vantaEffect.current = STARS({
+          vantaEffect.current = DOTS({
             el: vantaRef.current,
             THREE,
             color: 0x7c3aed,
+            color2: 0xec4899,
             backgroundColor: 0x0a0a0f,
-            showDots: true,
+            size: 1.5,
+            spacing: 20,
+            showLines: false,
             mouseControls: true,
             touchControls: false,
             minHeight: 600,
             minWidth: 200,
-            scale: 1.0,
-            scaleMobile: 1.0,
           });
         }
       } catch (e) {

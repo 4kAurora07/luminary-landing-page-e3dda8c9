@@ -1,4 +1,4 @@
-declare module 'vanta/dist/vanta.stars.min' {
-  const STARS: any;
-  export default STARS;
+declare module 'vanta/dist/vanta.dots.min' {
+  const DOTS: any;
+  export default DOTS;
 }
